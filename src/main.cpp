@@ -121,7 +121,7 @@ void presentation()
   strcat(sChild, sNoeud);
   strcat(sChild, " RGB");
   Serial.println(sChild);
-  present(CHILD_ID_RGB, S_RGB_LIGHT, sChild); // NODE_TXT);
+  present(CHILD_ID_RGB, S_RGB_LIGHT, sChild);
   wait(LONG_WAIT);  
 }
 
