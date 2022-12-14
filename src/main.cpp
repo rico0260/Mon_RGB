@@ -11,7 +11,7 @@
 #define SV "2.0"
 
 // Enable debug prints to serial monitor
-//#define MY_DEBUG
+#define MY_DEBUG
 
 // Enable and select radio type attached
 #define MY_RADIO_RF24
@@ -29,7 +29,10 @@
 
 //uncomment this line to assign a static ID
 //#define MY_NODE_ID AUTO 
-#define MY_NODE_ID 112
+#define MY_NODE_ID 31
+
+//Reverse RGB - RBG
+#define MY_RBG
 
 //MY_RF24_CHANNEL par defaut 76
 //Channels: 1 to 126 - 76 = Channel 77
@@ -47,13 +50,18 @@
 #define CHILD_ID_RGB 0  // sensor number needed in the custom devices set up
 
 #define RED  3  // Arduino PWM pin for Red
-#define GREEN 6 // Arduino PWM pin for Green
-#define BLUE 5  // Arduino PWM pin for Blue
+#ifdef MY_RBG   
+  #define GREEN 5 // Arduino PWM pin for Green
+  #define BLUE 6  // Arduino PWM pin for Blue
+#else
+  #define GREEN 6 // Arduino PWM pin for Green
+  #define BLUE 5  // Arduino PWM pin for Blue
+#endif
 
 // Wait times
-#define LONG_WAIT 500
-#define LONG_WAIT2 2000
 #define SHORT_WAIT 50
+#define LONG_WAIT 100
+#define LONG_WAIT2 2000
 
 char stringRGB[7] = "000000";
 //String StringRGB = "000000";
@@ -83,17 +91,17 @@ void before()
   analogWrite(RGB_pins[0], 255);
   analogWrite(RGB_pins[1], 0);
   analogWrite(RGB_pins[2], 0);
-  wait(LONG_WAIT);
+  wait(500);
   //Green
   analogWrite(RGB_pins[0], 0);
   analogWrite(RGB_pins[1], 255);
   analogWrite(RGB_pins[2], 0);
-  wait(LONG_WAIT);
+  wait(500);
   //Blue
   analogWrite(RGB_pins[0], 0);
   analogWrite(RGB_pins[1], 0);
   analogWrite(RGB_pins[2], 255);
-  wait(LONG_WAIT);
+  wait(500);
   //Eteindre
   analogWrite(RGB_pins[0], 0);
   analogWrite(RGB_pins[1], 0);
@@ -112,7 +120,7 @@ void presentation()
   Serial.println("=======> Envoyer SketchInfo");
   Serial.print(SN); Serial.print(" "); Serial.println(SV);
   sendSketchInfo(SN, SV );
-  wait(LONG_WAIT);
+  wait(LONG_WAIT2);
 
   // Register the sensor to gw
   Serial.println("=======> Présenter les capteurs");
@@ -122,12 +130,16 @@ void presentation()
   strcat(sChild, " RGB");
   Serial.println(sChild);
   present(CHILD_ID_RGB, S_RGB_LIGHT, sChild);
-  wait(LONG_WAIT);  
+  wait(LONG_WAIT2);  
 }
 
 void setup()
 {
+
   // Set the rgb pins in output mode
+  //valeur stocker dans eeprom
+  Serial.println("=======> valeur stocker dans EEPROM");
+
   for (int i = 0; i<3; i++) {
     
     // Lecture des dernieres valeures dans eeprom 
@@ -159,8 +171,7 @@ void setup()
     // }
 
     //valeur stocker dans eeprom
-    Serial.print("EEPROM: ");
-    Serial.println(loadState(RGB_pins[i]));
+    Serial.print("EEPROM: "); Serial.println(loadState(RGB_pins[i]));
     //valeur envoyer
     //Serial.print(" Envoye: ");
     //Serial.println(RGB_values[i]);
@@ -174,9 +185,21 @@ void setup()
 
   //Demander la couleur actuelle pour le noeud
   Serial.println("==========> Requesting initial value from controller");
+  #ifdef MY_DEBUG
+     Serial.println("V_STATUS"); 
+  #endif
   request( CHILD_ID_RGB, V_STATUS);
+  wait(SHORT_WAIT);
+  #ifdef MY_DEBUG
+     Serial.println("V_RGB"); 
+  #endif
   request( CHILD_ID_RGB, V_RGB);
+  wait(SHORT_WAIT);
+  #ifdef MY_DEBUG 
+    Serial.println("V_DIMMER"); 
+  #endif
   request( CHILD_ID_RGB, V_DIMMER);
+  wait(SHORT_WAIT);
   //wait(LONG_WAIT, C_SET, V_RGB);
 
 }
@@ -219,7 +242,8 @@ void receive(const MyMessage &message) {
   // We only expect one type of message from controller. But we better check anyway.
   if (message.type==V_RGB) {
     
-        long number = (long) strtol( message.data, NULL, 16);
+    long number = (long) strtol( message.data, NULL, 16);
+
     // Save value
     RGB_values[0] = number >> 16;
     RGB_values[1] = number >> 8 & 0xFF;
@@ -229,33 +253,34 @@ void receive(const MyMessage &message) {
 
     #ifdef MY_DEBUG
       Serial.println( "---> V_RGB: " );
-      Serial.print("message: ");
-      Serial.println(message.data);
-      Serial.print(": ");
-      Serial.println(stringRGB);
+      Serial.print("message in:  <-"); Serial.println(message.data);
+      Serial.print("message out: ->"); Serial.println(stringRGB);
       //
-      Serial.print("=> number: " );
-      Serial.println(number);
+      Serial.print("=> number: " ); Serial.println(number);
     #endif    
 
-    //Informe Home assistant de la couleur
-    send(msgRGB.set( stringRGB ));
-    
     //Changer etat des LEDs 
     ModifierLED();
-  
+
+    //Informe Home assistant de la couleur
+    //wait(SHORT_WAIT);    
+    send(msgRGB.set( stringRGB ));
+
   } else if (message.type == V_LIGHT || message.type == V_STATUS) {
     on_off_status = atoi(message.data);
     on_off_status = on_off_status == 1 ? 1 : 0;
 
     #ifdef MY_DEBUG 
-      Serial.print( "V_LIGHT: " );
-      Serial.println(message.data);
+      Serial.print( "V_LIGHT: <-" ); Serial.println(message.data);
+      Serial.print( "V_LIGHT: ->" ); Serial.println(on_off_status);
     #endif
 
-    send(msgSTATUS.set( on_off_status ));
     //Changer etat des LEDs
-    ModifierLED();
+    ModifierLED();    
+    
+    //Informe Home assistant de la couleur
+    //wait(SHORT_WAIT);
+    send(msgSTATUS.set( on_off_status ));
 
   } else if (message.type == V_DIMMER || message.type == V_PERCENTAGE) {
     dimmerlevel = atoi(message.data);
@@ -263,13 +288,16 @@ void receive(const MyMessage &message) {
     dimmerlevel = dimmerlevel < 0 ? 0 : dimmerlevel;
     
     #ifdef MY_DEBUG 
-      Serial.print( "V_DIMMER: " );
-      Serial.println(message.data);
+      Serial.print( "V_DIMMER: <-" ); Serial.println(message.data);
+      Serial.print( "V_DIMMER: ->" ); Serial.println(dimmerlevel);
     #endif 
 
-    send(msgDIMMER.set( dimmerlevel ));
     //Changer etat des LEDs
-    ModifierLED();
+    ModifierLED();    
+    
+    //Informe Home assistant de la couleur
+    //wait(SHORT_WAIT);    
+    send(msgDIMMER.set( dimmerlevel ));
 
   }
 
@@ -292,5 +320,14 @@ int setRGB[3] = {0,0,0};
   //saveState(3, on_off_status);
   //save dimmer
   //saveState(4, dimmerlevel);
+  #ifdef MY_DEBUG 
+    Serial.println( "-----> Modification RGB: " ); 
+    Serial.print( "     on_off_status: " ); Serial.println(on_off_status);
+    Serial.print( "     dimmerlevel: " ); Serial.println(dimmerlevel);
+    Serial.print( "     setRGB: " ); Serial.print(setRGB[0]); 
+    Serial.print("-"); Serial.print(setRGB[1]);
+    Serial.print("-"); Serial.println(setRGB[2]);
+  #endif 
+
 
 }
