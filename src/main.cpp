@@ -29,7 +29,7 @@
 
 //uncomment this line to assign a static ID
 //#define MY_NODE_ID AUTO 
-#define MY_NODE_ID 110
+#define MY_NODE_ID 112
 
 //MY_RF24_CHANNEL par defaut 76
 //Channels: 1 to 126 - 76 = Channel 77
