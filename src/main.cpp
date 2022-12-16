@@ -47,9 +47,9 @@
   //
   //#define MY_NODE_ID 100 //cuisine coté café
   //#define MY_NODE_ID 101 //cuisine coté cuisson
-  //#define MY_NODE_ID 110 //salon
+  #define MY_NODE_ID 110 //salon
   //#define MY_NODE_ID 111 //sejour
-  #define MY_NODE_ID 112 //entrée
+  //#define MY_NODE_ID 112 //entrée
   //
   //===========================
 #else
@@ -134,6 +134,7 @@ void before()
 
 void presentation()
 {
+  Serial.println("");
   Serial.print("===> Envoyer présentation pour noeud : ");
   Serial.println(MY_NODE_ID);
   
@@ -161,41 +162,66 @@ void setup()
 
   // Set the rgb pins in output mode
   //valeur stocker dans eeprom
-  Serial.println("=======> valeur stocker dans EEPROM");
-
-  for (int i = 0; i<3; i++) {
-    
-    // Afficher des infos de debugage
-    if (i==0) {
-      Serial.print("Rouge (R)" );
-    }
-    else if (i==1) {
-      Serial.print("Vert (G)" );
-    }
-    else {
-      Serial.print("Bleu (B)" );
-    }
-
+  #ifdef MON_USE_EEPROM 
     // Lecture des dernieres valeures dans EEPROM 
-    #ifdef MON_USE_EEPROM
+    #ifdef DEBUG  
+      Serial.println("=======> valeur stocker dans EEPROM");
+    #endif 
+
+    for (int i = 0; i<3; i++) {
+      
       RGB_values[i] = loadState(i);    
-      //analogWrite(RGB_pins[i], RGB_values[i]);
-      Serial.print(" <- EEPROM: "); Serial.println(RGB_values[i]);
-    #else
-      //valeur stocker dans EEPROM
-      Serial.print(" <- EEPROM: "); Serial.println(loadState(i));
-    #endif
+      
+      #ifdef DEBUG 
+        // Afficher des infos de debugage
+        if (i==0) {
+          Serial.print("Rouge (R)" );
+        }
+        else if (i==1) {
+          Serial.print("Vert (G)" );
+        }
+        else {
+          Serial.print("Bleu (B)" );
+        }
+        //analogWrite(RGB_pins[i], RGB_values[i]);
+        Serial.print(" <- EEPROM: "); Serial.println(RGB_values[i]);
+      #endif
+    }
 
-  }
-
-  #ifdef MON_USE_EEPROM
     // Lecture des dernieres valeures dans eeprom 
     on_off_status = loadState(3);
     // Lecture des dernieres valeures dans eeprom 
     dimmerlevel = loadState(4);
-    Serial.print("on_off_status <- EEPROM: "); Serial.println(on_off_status);
-    Serial.print("dimmerlevel <- EEPROM: "); Serial.println(dimmerlevel);
-  #endif
+    #ifdef DEBUG  
+      Serial.print("on_off_status <- EEPROM: "); Serial.println(on_off_status);
+      Serial.print("dimmerlevel <- EEPROM: "); Serial.println(dimmerlevel);
+    #endif 
+
+  #else 
+    #ifdef DEBUG
+      Serial.println("=======> valeur stocker dans EEPROM");
+      for (int i = 0; i<3; i++) {
+        //valeur stocker dans EEPROM
+        switch (i) {
+          case 0:
+            Serial.print("Rouge (R)" );
+            break;
+          case 1:
+            Serial.print("Vert (G)" );
+            break;
+          case 2:
+            Serial.print("Bleu (B)" );
+            break;
+          default: 
+            Serial.print("?" );
+        }        
+        Serial.print(", EEPROM: "); Serial.println(loadState(i));
+      } 
+      Serial.print("on_off_status, EEPROM: "); Serial.println(loadState(3));
+      Serial.print("dimmerlevel, EEPROM: "); Serial.println(loadState(4));
+    #endif 
+
+  #endif 
 
   //Demander la couleur actuelle pour le noeud
   Serial.println("==========> Requesting initial value from controller");
@@ -229,16 +255,22 @@ void loop()
     Serial.println("======> Sending initial value");
     //Serial.println(&RGB_values[0]);
     //La couleur
-    Serial.println("Color Message");
+    #ifdef MY_DEBUG 
+      Serial.println("Color Message");
+    #endif 
     //send(msgRGB.set( "00FF00" ));
     send(msgRGB.set( stringRGB ));
     wait(LONG_WAIT2); //to check: is it needed
     //Dimmer
-    Serial.println("Dimmer Message");
+    #ifdef MY_DEBUG 
+      Serial.println("Dimmer Message");
+    #endif 
     send(msgDIMMER.set( dimmerlevel ));
     wait(LONG_WAIT2); //to check: is it needed
     //Le statut
-    Serial.println("Status Message");
+    #ifdef MY_DEBUG 
+      Serial.println("Status Message");
+    #endif 
     send(msgSTATUS.set( on_off_status ));
     wait(LONG_WAIT2); //to check: is it needed
 
