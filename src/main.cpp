@@ -27,10 +27,6 @@
 
 //#define MY_OTA_FIRMWARE_FEATURE
 
-//uncomment this line to assign a static ID
-//#define MY_NODE_ID AUTO 
-//#define MY_NODE_ID 100
-
 // Reverse RGB - RBG
 #define MON_RGB //reverse of RBG for Prototype
 // Use EEPROM (ATTENTION modification à réaliser pour écrire seulement si la valeur à changée)
@@ -135,13 +131,12 @@ void before()
 void presentation()
 {
   Serial.println("");
-  Serial.print("===> Envoyer présentation pour noeud : ");
-  Serial.println(MY_NODE_ID);
+  Serial.print("===> Présentation du noeud : "); Serial.println(MY_NODE_ID);
   
   char sNoeud[] = STR(MY_NODE_ID);
 
   // Send the sketch version information to the gateway and Controller
-  Serial.println("=======> Envoyer SketchInfo");
+  Serial.println("=======> Présenter SketchInfo");
   Serial.print(SN); Serial.print(" "); Serial.println(SV);
   sendSketchInfo(SN, SV );
   wait(LONG_WAIT2);
@@ -164,7 +159,7 @@ void setup()
   //valeur stocker dans eeprom
   #ifdef MON_USE_EEPROM 
     // Lecture des dernieres valeures dans EEPROM 
-    #ifdef DEBUG  
+    #ifdef MY_DEBUG  
       Serial.println("=======> valeur stocker dans EEPROM");
     #endif 
 
@@ -172,7 +167,7 @@ void setup()
       
       RGB_values[i] = loadState(i);    
       
-      #ifdef DEBUG 
+      #ifdef MY_DEBUG 
         // Afficher des infos de debugage
         if (i==0) {
           Serial.print("Rouge (R)" );
@@ -192,13 +187,13 @@ void setup()
     on_off_status = loadState(3);
     // Lecture des dernieres valeures dans eeprom 
     dimmerlevel = loadState(4);
-    #ifdef DEBUG  
+    #ifdef MY_DEBUG  
       Serial.print("on_off_status <- EEPROM: "); Serial.println(on_off_status);
       Serial.print("dimmerlevel <- EEPROM: "); Serial.println(dimmerlevel);
     #endif 
 
   #else 
-    #ifdef DEBUG
+    #ifdef MY_DEBUG
       Serial.println("=======> valeur stocker dans EEPROM");
       for (int i = 0; i<3; i++) {
         //valeur stocker dans EEPROM
@@ -260,19 +255,19 @@ void loop()
     #endif 
     //send(msgRGB.set( "00FF00" ));
     send(msgRGB.set( stringRGB ));
-    wait(LONG_WAIT2); //to check: is it needed
+    wait(LONG_WAIT2);
     //Dimmer
     #ifdef MY_DEBUG 
       Serial.println("Dimmer Message");
     #endif 
     send(msgDIMMER.set( dimmerlevel ));
-    wait(LONG_WAIT2); //to check: is it needed
+    wait(LONG_WAIT2);
     //Le statut
     #ifdef MY_DEBUG 
       Serial.println("Status Message");
     #endif 
     send(msgSTATUS.set( on_off_status ));
-    wait(LONG_WAIT2); //to check: is it needed
+    wait(LONG_WAIT2);
 
     //request(CHILD_ID_RGB, V_STATUS);
     //wait(2000, C_SET, V_STATUS);
