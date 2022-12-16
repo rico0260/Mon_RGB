@@ -32,19 +32,29 @@
 //#define MY_NODE_ID 100
 
 // Reverse RGB - RBG
-#define MON_RGB
+#define MON_RGB //reverse of RBG for Prototype
 // Use EEPROM (ATTENTION modification à réaliser pour écrire seulement si la valeur à changée)
 //#define MON_USE_EEPROM
+
+#define MY_RX_MESSAGE_BUFFER_FEATURE //for MY_RF24_IRQ_PIN
+//Define this to use the IRQ pin of the RF24 module
+#define MY_RF24_IRQ_PIN (2)
 
 #if defined(MON_RGB)
   //uncomment this line to assign a static ID
   //===========================
-  //#define MY_NODE_ID AUTO 
-  #define MY_NODE_ID 100
+  //////#define MY_NODE_ID AUTO 
+  //
+  //#define MY_NODE_ID 100 //cuisine coté café
+  //#define MY_NODE_ID 101 //cuisine coté cuisson
+  //#define MY_NODE_ID 110 //salon
+  //#define MY_NODE_ID 111 //sejour
+  #define MY_NODE_ID 112 //entrée
+  //
   //===========================
-
 #else
-  #define MY_NODE_ID 31
+  //Prototype
+  #define MY_NODE_ID 31 
 #endif
 
 //MY_RF24_CHANNEL par defaut 76
@@ -52,8 +62,6 @@
 //MY_RF24_CHANNEL (76)
 #define MY_RF24_CHANNEL 81
 
-//Define this to use the IRQ pin of the RF24 module
-#define MY_RF24_IRQ_PIN 10 // (2) 
 //Define this to use the RF24 power pin (optional).
 //#define MY_RF24_POWER_PIN (3)
 
@@ -64,7 +72,7 @@
 
 #define RED  3  // Arduino PWM pin for Red
 //#ifdef MON_RBG   
-#if defined(MON_RBG) 
+#if defined(MON_RGB) 
   //RGB
   #define GREEN 6 // Arduino PWM pin for Green
   #define BLUE 5  // Arduino PWM pin for Blue
