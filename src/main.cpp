@@ -3,15 +3,15 @@
  * This example will remember the last rgb color set after power failure.
  * for : Home assistant
  * Auteur : Eric HANACEK
- * Modification : 11/2/2022 pour V2.3.2
+ * Modification : 16/12/2022 pour V2.3.2
 */
 #include <Arduino.h>
 
 #define SN "RGB Node"
-#define SV "2.0"
+#define SV "2.1"
 
 // Enable debug prints to serial monitor
-#define MY_DEBUG
+//#define MY_DEBUG
 
 // Enable and select radio type attached
 #define MY_RADIO_RF24
@@ -20,19 +20,32 @@
 //#define MY_RADIO_RFM95
 
 // Enable repeater functionality for this node
-#define MY_REPEATER_FEATURE
+//#define MY_REPEATER_FEATURE
 
 //Options: RF24_PA_MIN, RF24_PA_LOW, (RF24_PA_HIGH), RF24_PA_MAX
-#define MY_RF24_PA_LEVEL RF24_PA_MAX
+//#define MY_RF24_PA_LEVEL RF24_PA_MAX
 
 //#define MY_OTA_FIRMWARE_FEATURE
 
 //uncomment this line to assign a static ID
 //#define MY_NODE_ID AUTO 
-#define MY_NODE_ID 31
+//#define MY_NODE_ID 100
 
-//Reverse RGB - RBG
-#define MY_RBG
+// Reverse RGB - RBG
+#define MON_RGB
+// Use EEPROM (ATTENTION modification à réaliser pour écrire seulement si la valeur à changée)
+//#define MON_USE_EEPROM
+
+#if defined(MON_RGB)
+  //uncomment this line to assign a static ID
+  //===========================
+  //#define MY_NODE_ID AUTO 
+  #define MY_NODE_ID 100
+  //===========================
+
+#else
+  #define MY_NODE_ID 31
+#endif
 
 //MY_RF24_CHANNEL par defaut 76
 //Channels: 1 to 126 - 76 = Channel 77
@@ -40,7 +53,7 @@
 #define MY_RF24_CHANNEL 81
 
 //Define this to use the IRQ pin of the RF24 module
-//#define MY_RF24_IRQ_PIN (2) 
+#define MY_RF24_IRQ_PIN 10 // (2) 
 //Define this to use the RF24 power pin (optional).
 //#define MY_RF24_POWER_PIN (3)
 
@@ -50,12 +63,15 @@
 #define CHILD_ID_RGB 0  // sensor number needed in the custom devices set up
 
 #define RED  3  // Arduino PWM pin for Red
-#ifdef MY_RBG   
-  #define GREEN 5 // Arduino PWM pin for Green
-  #define BLUE 6  // Arduino PWM pin for Blue
-#else
+//#ifdef MON_RBG   
+#if defined(MON_RBG) 
+  //RGB
   #define GREEN 6 // Arduino PWM pin for Green
   #define BLUE 5  // Arduino PWM pin for Blue
+#else
+  //RBG
+  #define GREEN 5 // Arduino PWM pin for Green
+  #define BLUE 6  // Arduino PWM pin for Blue
 #endif
 
 // Wait times
@@ -63,13 +79,12 @@
 #define LONG_WAIT 100
 #define LONG_WAIT2 2000
 
-char stringRGB[7] = "000000";
-//String StringRGB = "000000";
+char stringRGB[7] = "00F000";
+//String StringRGB = "00FF00";
 int on_off_status = 0;
-int dimmerlevel = 100;
+int dimmerlevel = 50;
 int RGB_pins[3] = {RED,GREEN,BLUE};
 int RGB_values[3] = {0,0,0};
-
 
 // initate and re-use to save memory.
 MyMessage msgRGB(CHILD_ID_RGB, V_RGB);
@@ -142,65 +157,57 @@ void setup()
 
   for (int i = 0; i<3; i++) {
     
-    // Lecture des dernieres valeures dans eeprom 
-    //RGB_values[i] = loadState(RGB_pins[i]);
-    
-    //analogWrite(RGB_pins[i], loadState(RGB_pins[i]));
-    //analogWrite(RGB_pins[i], RGB_values[i]);
-    
     // Afficher des infos de debugage
     if (i==0) {
-      Serial.print("Rouge (R): " );
+      Serial.print("Rouge (R)" );
     }
     else if (i==1) {
-      Serial.print("Vert (G): " );
+      Serial.print("Vert (G)" );
     }
     else {
-      Serial.print("Bleu (B): " );
+      Serial.print("Bleu (B)" );
     }
-    //alternative
-    // switch(i) {
-    //   case 0:
-    //     Serial.print("Rouge (R): " );
-    //     break;
-    //   case 1:
-    //     Serial.print("Vert (G): " );
-    //     break;
-    //   default:
-    //     Serial.print("Bleu (B): " );
-    // }
 
-    //valeur stocker dans eeprom
-    Serial.print("EEPROM: "); Serial.println(loadState(RGB_pins[i]));
-    //valeur envoyer
-    //Serial.print(" Envoye: ");
-    //Serial.println(RGB_values[i]);
+    // Lecture des dernieres valeures dans EEPROM 
+    #ifdef MON_USE_EEPROM
+      RGB_values[i] = loadState(i);    
+      //analogWrite(RGB_pins[i], RGB_values[i]);
+      Serial.print(" <- EEPROM: "); Serial.println(RGB_values[i]);
+    #else
+      //valeur stocker dans EEPROM
+      Serial.print(" <- EEPROM: "); Serial.println(loadState(i));
+    #endif
 
   }
 
-  // Lecture des dernieres valeures dans eeprom 
-  //on_off_status = loadState(3);
-  // Lecture des dernieres valeures dans eeprom 
-  //dimmerlevel = loadState(4);
+  #ifdef MON_USE_EEPROM
+    // Lecture des dernieres valeures dans eeprom 
+    on_off_status = loadState(3);
+    // Lecture des dernieres valeures dans eeprom 
+    dimmerlevel = loadState(4);
+    Serial.print("on_off_status <- EEPROM: "); Serial.println(on_off_status);
+    Serial.print("dimmerlevel <- EEPROM: "); Serial.println(dimmerlevel);
+  #endif
 
   //Demander la couleur actuelle pour le noeud
   Serial.println("==========> Requesting initial value from controller");
   #ifdef MY_DEBUG
-     Serial.println("V_STATUS"); 
-  #endif
-  request( CHILD_ID_RGB, V_STATUS);
-  wait(SHORT_WAIT);
-  #ifdef MY_DEBUG
-     Serial.println("V_RGB"); 
+     Serial.println("--> V_RGB request:"); 
   #endif
   request( CHILD_ID_RGB, V_RGB);
   wait(SHORT_WAIT);
+  
   #ifdef MY_DEBUG 
-    Serial.println("V_DIMMER"); 
+    Serial.println("--> V_DIMMER request:"); 
   #endif
   request( CHILD_ID_RGB, V_DIMMER);
   wait(SHORT_WAIT);
-  //wait(LONG_WAIT, C_SET, V_RGB);
+
+  #ifdef MY_DEBUG
+     Serial.println("--> V_STATUS request:"); 
+  #endif
+  request( CHILD_ID_RGB, V_STATUS);
+  wait(SHORT_WAIT);
 
 }
 
@@ -218,13 +225,13 @@ void loop()
     //send(msgRGB.set( "00FF00" ));
     send(msgRGB.set( stringRGB ));
     wait(LONG_WAIT2); //to check: is it needed
-    //Le statut
-    Serial.println("Status Message");
-    send(msgSTATUS.set( on_off_status ));
-    wait(LONG_WAIT2); //to check: is it needed
     //Dimmer
     Serial.println("Dimmer Message");
     send(msgDIMMER.set( dimmerlevel ));
+    wait(LONG_WAIT2); //to check: is it needed
+    //Le statut
+    Serial.println("Status Message");
+    send(msgSTATUS.set( on_off_status ));
     wait(LONG_WAIT2); //to check: is it needed
 
     //request(CHILD_ID_RGB, V_STATUS);
@@ -238,7 +245,12 @@ void receive(const MyMessage &message) {
     
   /*Serial.print("Type message ");
   Serial.println(message.type);*/
-  
+  if (message.isAck()) {
+    #ifdef MY_DEBUG
+      Serial.println("This is an ack from gateway");
+    #endif
+  }
+
   // We only expect one type of message from controller. But we better check anyway.
   if (message.type==V_RGB) {
     
@@ -253,17 +265,13 @@ void receive(const MyMessage &message) {
 
     #ifdef MY_DEBUG
       Serial.println( "---> V_RGB: " );
-      Serial.print("message in:  <-"); Serial.println(message.data);
-      Serial.print("message out: ->"); Serial.println(stringRGB);
+      Serial.print("message in:  <- "); Serial.println(message.data);
+      Serial.print("message out: -> "); Serial.println(stringRGB);
       //
       Serial.print("=> number: " ); Serial.println(number);
     #endif    
 
-    //Changer etat des LEDs 
-    ModifierLED();
-
-    //Informe Home assistant de la couleur
-    //wait(SHORT_WAIT);    
+    //Informe Home assistant de la couleur  
     send(msgRGB.set( stringRGB ));
 
   } else if (message.type == V_LIGHT || message.type == V_STATUS) {
@@ -271,35 +279,30 @@ void receive(const MyMessage &message) {
     on_off_status = on_off_status == 1 ? 1 : 0;
 
     #ifdef MY_DEBUG 
-      Serial.print( "V_LIGHT: <-" ); Serial.println(message.data);
-      Serial.print( "V_LIGHT: ->" ); Serial.println(on_off_status);
+      Serial.print( "V_LIGHT: <- " ); Serial.println(message.data);
+      Serial.print( "V_LIGHT: -> " ); Serial.println(on_off_status);
     #endif
 
-    //Changer etat des LEDs
-    ModifierLED();    
-    
     //Informe Home assistant de la couleur
-    //wait(SHORT_WAIT);
-    send(msgSTATUS.set( on_off_status ));
-
+    send(msgSTATUS.set( on_off_status )); 
+    
   } else if (message.type == V_DIMMER || message.type == V_PERCENTAGE) {
     dimmerlevel = atoi(message.data);
     dimmerlevel = dimmerlevel > 100 ? 100 : dimmerlevel;
     dimmerlevel = dimmerlevel < 0 ? 0 : dimmerlevel;
     
     #ifdef MY_DEBUG 
-      Serial.print( "V_DIMMER: <-" ); Serial.println(message.data);
-      Serial.print( "V_DIMMER: ->" ); Serial.println(dimmerlevel);
+      Serial.print( "V_DIMMER: <- " ); Serial.println(message.data);
+      Serial.print( "V_DIMMER: -> " ); Serial.println(dimmerlevel);
     #endif 
 
-    //Changer etat des LEDs
-    ModifierLED();    
-    
-    //Informe Home assistant de la couleur
-    //wait(SHORT_WAIT);    
+    //Informe Home assistant de la couleur   
     send(msgDIMMER.set( dimmerlevel ));
 
   }
+
+  //Changer etat des LEDs
+  ModifierLED();    
 
 }
 
@@ -313,21 +316,27 @@ int setRGB[3] = {0,0,0};
   for (int i = 0; i<3; i++) {
     //Changer etat des LEDs 
     analogWrite(RGB_pins[i],setRGB[i]);  
-    // Enregistrer dans eeprom
-    //saveState(RGB_pins[i], RGB_values[i]);
+    
+    #ifdef MON_USE_EEPROM
+      // Enregistrer dans EEPROM
+      saveState(i, RGB_values[i]);
+    #endif
   }
-  //save on/off
-  //saveState(3, on_off_status);
-  //save dimmer
-  //saveState(4, dimmerlevel);
+
+  #ifdef MON_USE_EEPROM
+    //save on/off
+    saveState(3, on_off_status);
+    //save dimmer
+    saveState(4, dimmerlevel);
+  #endif
+
   #ifdef MY_DEBUG 
     Serial.println( "-----> Modification RGB: " ); 
     Serial.print( "     on_off_status: " ); Serial.println(on_off_status);
     Serial.print( "     dimmerlevel: " ); Serial.println(dimmerlevel);
-    Serial.print( "     setRGB: " ); Serial.print(setRGB[0]); 
-    Serial.print("-"); Serial.print(setRGB[1]);
-    Serial.print("-"); Serial.println(setRGB[2]);
-  #endif 
-
+    Serial.print( "     setRGB: " ); Serial.print(RGB_values[0]); 
+    Serial.print("-"); Serial.print(RGB_values[1]);
+    Serial.print("-"); Serial.println(RGB_values[2]);
+  #endif
 
 }
