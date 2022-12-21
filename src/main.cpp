@@ -27,8 +27,6 @@
 
 //#define MY_OTA_FIRMWARE_FEATURE
 
-// Reverse RGB - RBG
-#define MON_RGB //reverse of RBG for Prototype
 // Use EEPROM (ATTENTION modification à réaliser pour écrire seulement si la valeur à changée)
 //#define MON_USE_EEPROM
 
@@ -36,27 +34,12 @@
 //Define this to use the IRQ pin of the RF24 module
 #define MY_RF24_IRQ_PIN (2)
 
-#if defined(MON_RGB)
-  //uncomment this line to assign a static ID
-  //===========================
-  //////#define MY_NODE_ID AUTO 
-  //
-  //#define MY_NODE_ID 100 //cuisine coté café
-  //#define MY_NODE_ID 101 //cuisine coté cuisson
-  #define MY_NODE_ID 110 //salon
-  //#define MY_NODE_ID 111 //sejour
-  //#define MY_NODE_ID 112 //entrée
-  //
-  //===========================
-#else
-  //Prototype
-  #define MY_NODE_ID 31 
-#endif
+//#define MY_NODE_ID AUTO
 
 //MY_RF24_CHANNEL par defaut 76
 //Channels: 1 to 126 - 76 = Channel 77
 //MY_RF24_CHANNEL (76)
-#define MY_RF24_CHANNEL 81
+#include <perso.h>
 
 //Define this to use the RF24 power pin (optional).
 //#define MY_RF24_POWER_PIN (3)
