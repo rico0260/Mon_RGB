@@ -7,7 +7,7 @@
 - [my Thingiverse link](https://www.thingiverse.com/rico0260)
 
 # Project
-![Appareil](./Images/Appareil.png)
+![Appareil](./images/Appareil.jpg)
 
 
 
