@@ -1,10 +1,13 @@
-/* 
+/****************************
+ * 
  * Example sketch showing how to control an RGB Led Strip.
  * This example will remember the last rgb color set after power failure.
  * for : Home assistant
+ * 
  * Auteur : Eric HANACEK
  * Modification : 16/12/2022 pour V2.3.2
-*/
+ * 
+****************************/
 #include <Arduino.h>
 
 #define SN "RGB Node"
