@@ -255,8 +255,6 @@ void loop()
     send(msgSTATUS.set( on_off_status ));
     wait(LONG_WAIT2);
 
-    //request(CHILD_ID_RGB, V_STATUS);
-    //wait(2000, C_SET, V_STATUS);
     first_message_sent = true;
   }
 
@@ -264,8 +262,6 @@ void loop()
 
 void receive(const MyMessage &message) {
     
-  /*Serial.print("Type message ");
-  Serial.println(message.type);*/
   if (message.isAck()) {
     #ifdef MY_DEBUG
       Serial.println("This is an ack from gateway");
